@@ -26,7 +26,7 @@ issue or a pull request.
    | `feat!:`, `fix!:` | breaking change | major; minor before 1.0.0 |
    | `docs:` `test:` `ci:` `chore:` `refactor:` | no behaviour change | none |
 
-5. Required checks: `lint`, `sanity`, `molecule`, `conventional`. All must
+5. Required checks: `lint`, `sanity`, `molecule`, `trivy`, `conventional`. All must
    pass.
 6. Pull requests merge through the merge queue, squashed. The queue tests
    each pull request on top of the current `main` and removes it on failure.
