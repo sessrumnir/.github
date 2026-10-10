@@ -1,68 +1,84 @@
-# Contributing to sessrumnir
+# Contributing
 
-Thank you for helping. This guide applies to every sessrumnir repository
-that has no contributing guide of its own.
+These rules apply to every public sessrumnir repository without its own
+`CONTRIBUTING.md`. Repository rulesets enforce them; a pull request that
+breaks one cannot merge.
 
-Report security problems privately, as [SECURITY.md](SECURITY.md) describes,
-never in a public issue or pull request.
+Report vulnerabilities as [SECURITY.md](SECURITY.md) describes. Never in an
+issue or a pull request.
 
-## How a change gets in
+## Rules
 
-1. **Fork** the repository, unless you are a member of the organization; a
-   member creates a branch in the repository itself.
-2. **Branch** from an up-to-date `main`, one branch per change:
+1. Every change comes from a fork. The repository holds only `main` and the
+   branches of its release and dependency bots; creating any other branch
+   is refused, for maintainers too.
+2. `main` changes only through pull requests. No direct pushes, no force
+   pushes, no merge commits.
+3. One pull request, one change. Unrelated changes go in separate pull
+   requests.
+4. The pull request title is a [Conventional Commit](https://www.conventionalcommits.org/).
+   It becomes the squash commit on `main` and the changelog entry.
 
-   ```sh
-   git switch main
-   git pull --ff-only
-   git switch -c fix/short-description
-   ```
+   | Prefix | Meaning | Release |
+   | --- | --- | --- |
+   | `fix:` | bug fix | patch |
+   | `feat:` | new feature | minor |
+   | `feat!:`, `fix!:` | breaking change | major; minor before 1.0.0 |
+   | `docs:` `test:` `ci:` `chore:` `refactor:` | no behaviour change | none |
 
-3. **Commit** as often as you like. Your branch's commits are squashed into
-   one when the pull request merges, so they do not need to be tidy.
-4. **Open a pull request** against `main`. Its title becomes the commit
-   message on `main` and the changelog entry, so it must be a
-   [Conventional Commit](https://www.conventionalcommits.org/):
+5. Required checks: `lint`, `sanity`, `molecule`, `conventional`. All must
+   pass.
+6. Pull requests merge through the merge queue, squashed. The queue tests
+   each pull request on top of the current `main` and removes it on failure.
+7. Never edit versions, `.release-please-manifest.json` or `CHANGELOG.md`.
+   Release Please owns them.
 
-   | Type | Use for | Release |
-   |---|---|---|
-   | `fix:` | a bug fix | patch |
-   | `feat:` | a new feature | minor |
-   | `feat!:` or `fix!:` | a breaking change | major (minor before 1.0) |
-   | `docs:`, `test:`, `ci:`, `chore:`, `refactor:` | everything else | none |
+## Workflow
 
-5. **Wait for the checks** (lint, sanity tests, Molecule, the title check).
-   A maintainer reviews the pull request and squash-merges it once the
-   checks are green.
+Fork once, then work on a branch of the fork named after the change type:
+`fix/…`, `feat/…`, `docs/…`. Your fork's `main` only mirrors upstream; never
+commit to it.
+
+```sh
+gh repo fork sessrumnir/<repository> --clone
+cd <repository>
+make deps
+git switch -c fix/short-description
+# change, commit
+make lint sanity test
+git push -u origin fix/short-description
+gh pr create --repo sessrumnir/<repository>
+```
+
+`gh repo fork --clone` names your fork `origin` and the sessrumnir
+repository `upstream`. `make lint`, `make sanity` and `make test` are the
+checks CI runs. CI also runs in your fork on every push.
+
+A first-time contributor's workflow runs wait for a maintainer's approval.
 
 ## Updating a pull request
 
-A pull request follows its branch. To address review comments or a failing
-check, push more commits to the same branch; the pull request updates and
-the checks run again. Rebasing and force-pushing the branch works too. Do not
-close the pull request and open a new one for the same change.
+Push to the same branch of your fork. The pull request and its checks
+follow. Do not close it and open another for the same change.
 
-A pull request is closed without merging only when the change itself is
-dropped.
-
-## Running the checks locally
-
-Every repository has a `makefile`:
+When upstream `main` has moved and the branch conflicts or falls behind,
+rebase it. Do not merge `main` into it.
 
 ```sh
-make deps     # tools and pre-commit hooks
-make lint     # the same hooks CI runs
-make sanity   # ansible-test sanity, in a container
-make test     # Molecule, in Docker
+git fetch upstream
+git rebase upstream/main
+git push --force-with-lease
 ```
+
+A pull request is closed unmerged only when the change is dropped.
 
 ## Releases and dependencies
 
-Release Please opens a release pull request from the merged commit titles and
-publishes the release when it merges. Never edit versions, manifests or
-changelogs by hand. Renovate keeps dependencies and pinned images current.
+Release Please opens release pull requests from the commit titles on `main`;
+a maintainer merges them. Renovate updates dependencies and pinned images and
+merges non-major updates itself once the required checks pass.
 
-Collections install from git tags:
+Collections install from git tags, never from a branch:
 
 ```yaml
 collections:
@@ -71,18 +87,13 @@ collections:
     version: v0.2.1
 ```
 
-## Keeping your clone tidy
-
-After your pull request merges:
+## After the merge
 
 ```sh
+gh repo sync --source sessrumnir/<repository>
 git switch main
 git pull --ff-only
 git fetch --prune
 git branch -d fix/short-description
+git push origin --delete fix/short-description
 ```
-
-`git fetch --prune` drops references to branches deleted on GitHub, and
-`git branch -d` only deletes a branch that is merged, so it is safe. In a
-fork, keep `main` current with `gh repo sync` or the **Sync fork** button.
-To try someone else's pull request, run `gh pr checkout <number>`.
