@@ -33,6 +33,37 @@ issue or a pull request.
 7. Never edit versions, `.release-please-manifest.json` or `CHANGELOG.md`.
    Release Please owns them.
 
+## Ansible code standards
+
+Reviews hold every pull request to an Ansible collection or role to these.
+
+1. No explanatory comments in tasks, handlers, Molecule files or plugins.
+   The reason belongs in the role README, the argument spec or the commit
+   message. Allowed: short commented examples in role defaults, Python
+   docstrings, machine-read markers (`# renovate:`, `# noqa:`,
+   `# pragma:`), and comments in files copied to hosts as they are.
+2. A module before `command` or `shell`. Use `ansible.builtin`,
+   `community.general` or `ansible.posix` when one does the job. Keep
+   `command` only where no module exists, and give it `changed_when`.
+3. `changed` means the host changed. Never set `changed_when` to hide a real
+   change, for example to keep a handler from firing; put the condition on
+   the handler or the follow-up task instead.
+4. Every dependency is pinned exactly and updated by Renovate: Python
+   packages with `==`, hash-locked where the file is a lock, collections by
+   git tag, container images by version. A new dependency needs a Renovate
+   manager that finds it; check the dependency dashboard after the merge.
+5. Files written to hosts get the narrowest mode that works. Anything that
+   holds secrets, personal data or maps the network is `0600` or `0640`.
+6. A private or unstable API only when no public one does the job. Name it
+   in the README and in the docstring of the code that uses it, and cover it
+   with a test that fails when it changes.
+7. Every role has an argument spec. Variables carry the role name as
+   prefix, internal ones `__` before it. Files are `.yml`, not `.yaml`.
+8. Examples and tests use generic data only: `example.com` names, RFC 5737
+   and RFC 2544 IPv4 and RFC 3849 IPv6 addresses, no real names, hosts or
+   handles.
+9. Reformatting goes in its own pull request, never mixed into a change.
+
 ## Workflow
 
 Fork once, then work on a branch of the fork named after the change type:
