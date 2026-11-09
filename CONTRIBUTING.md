@@ -64,6 +64,35 @@ Reviews hold every pull request to an Ansible collection or role to these.
    handles.
 9. Reformatting goes in its own pull request, never mixed into a change.
 
+## Naming network objects
+
+Roles, examples and tests name what they create on a device the same way.
+Every name, comment and item is lowercase, words joined by `-`, nothing
+else, so scripts, firewall rules and logs use it without quoting. Variables
+in code keep `_`. Interface names stay within 15 characters, the Linux
+limit.
+
+- **Physical ports** keep their hardware names (`ether1`, `sfp-sfpplus1`,
+  `enp2s0`). The comment names the far end: `<peer>-<peer-port>`, for
+  example `gw-a-eth1`.
+- **Logical objects** say what they are and where they go, seen from the
+  device that carries them: `<kind>-<peer>`.
+  - `peerlink-<peer>`: the link between the two members of a pair, for
+    example `peerlink-sw-b` on `sw-a`.
+  - `mlag-<peers>`: an MLAG bond, the same name on both switches, for
+    example `mlag-gw-a-gw-b`.
+  - `bond-<peers>`: any other bond, for example `bond-sw-a-sw-b` on a
+    router.
+  - `br-<purpose>`: a bridge, for example `br-main`.
+  - `vrf-<zone>`: a VRF, for example `vrf-mgmt`.
+
+  The comment gives the full path: `<local-ports>-to-<peer>-<peer-ports>`,
+  for example `sfp1-sfp2-to-sw-b-sfp1-sfp2`. Numbers such as an MLAG ID or
+  a VLAN ID stay in their own fields, never in the name.
+- **VLAN interfaces** are named after their VLAN, which is also the
+  firewall zone: `mgmt`, `lan`, `guest`, `iot`, `wan-a`. Rules and logs then
+  read `lan` to `wan`, where `wan` groups `wan-a` and `wan-b`.
+
 ## Workflow
 
 Fork once, then work on a branch of the fork named after the change type:
